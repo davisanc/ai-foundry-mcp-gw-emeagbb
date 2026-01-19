@@ -14,7 +14,7 @@ env:
   APIM_NAME: mcp-apim-emeagbb
   APIM_PUBLISHER_EMAIL: test@example.com
   APIM_PUBLISHER_NAME: "David Sanchez"
-  AI_PROJECT_NAME: ${{ secrets.AI_PROJECT_NAME || 'davidsr-ai-project' }}
+  AI_PROJECT_NAME: ${{ secrets.AI_PROJECT_NAME || 'davidsr-ai-project-resource' }}
   AI_AGENT_NAME: document-analysis-agent
 
 jobs:
