@@ -7,7 +7,7 @@ on:
 
 env:
   AZURE_RESOURCE_GROUP: ai-mcp-rg
-  AI_PROJECT_RESOURCE_GROUP: ${{ secrets.AI_PROJECT_RESOURCE_GROUP || 'AI-RG' }}
+  AI_PROJECT_RESOURCE_GROUP: ${{ secrets.AI_PROJECT_RESOURCE_GROUP || 'davidsr-AI-RG' }}
   LOCATION: westeurope
   APP_SERVICE_PLAN: mcp-asp-emeagbb
   WEBAPP_NAME: mcp-server-app-emeagbb
