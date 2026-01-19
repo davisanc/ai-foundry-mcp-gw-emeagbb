@@ -4,20 +4,23 @@ const fetch = require('node-fetch');
 
 const SESSION_ID = '9da9c4ad-13b1-4a42-88b9-b8c31d9f722c';
 const DOC_ID = 'a57fc6fe-454c-4bf4-8c05-cfbe4d400557';
+const WEBAPP_NAME = process.env.WEBAPP_NAME || 'mcp-server-app-emeagbb';
+const BASE_URL = `https://${WEBAPP_NAME}.azurewebsites.net`;
 
 console.log('🧪 Testing get_document MCP tool...\n');
 console.log(`Session ID: ${SESSION_ID}`);
-console.log(`Document ID: ${DOC_ID}\n`);
+console.log(`Document ID: ${DOC_ID}`);
+console.log(`Web App: ${BASE_URL}\n`);
 
 let responseReceived = false;
 
-const es = new EventSource('https://mcp-server-app-davisanc.azurewebsites.net/mcp/sse');
+const es = new EventSource(`${BASE_URL}/mcp/sse`);
 
 es.addEventListener('endpoint', async (event) => {
   const endpoint = event.data;
   console.log('✅ SSE connected, endpoint:', endpoint);
   
-  const messageUrl = `https://mcp-server-app-davisanc.azurewebsites.net${endpoint}`;
+  const messageUrl = `${BASE_URL}${endpoint}`;
   
   console.log('\n📤 Sending get_document request...');
   
