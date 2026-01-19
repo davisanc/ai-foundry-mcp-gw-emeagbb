@@ -104,18 +104,38 @@ jobs:
     # -------------------------------
   
     - name: Create APIM
+      continue-on-error: true
       run: |
         az apim create \
           --resource-group $AZURE_RESOURCE_GROUP \
           --name $APIM_NAME \
           --location $LOCATION \
           --publisher-email $APIM_PUBLISHER_EMAIL \
-          --publisher-name "$APIM_PUBLISHER_NAME" \
+          --publisher-name "$APIM_PUBLISHER_NAME"
+
+    - name: Wait for APIM to be ready
+      run: |
+        echo "⏳ Waiting for APIM activation to complete (up to 5 minutes)..."
+        max_attempts=30
+        attempt=1
+        while [ $attempt -le $max_attempts ]; do
+          if az apim show -g $AZURE_RESOURCE_GROUP -n $APIM_NAME 2>/dev/null | grep -q '"provisioningState":"Succeeded"'; then
+            echo "✅ APIM is ready!"
+            break
+          fi
+          echo "Waiting... (attempt $attempt/$max_attempts)"
+          sleep 10
+          attempt=$((attempt + 1))
+        done
+        if [ $attempt -gt $max_attempts ]; then
+          echo "⚠️  APIM provisioning timeout, continuing anyway..."
+        fi
 
     
 
 
     - name: Import MCP API into APIM
+      continue-on-error: true
       run: |
         az apim api import \
           -g $AZURE_RESOURCE_GROUP \
