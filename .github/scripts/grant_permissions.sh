@@ -70,5 +70,8 @@ done
 echo "========================================================================"
 echo "Permission Grant Complete"
 echo "========================================================================"
+echo "Waiting for role assignments to propagate (60 seconds)..."
+sleep 60
+echo "✅ Role propagation complete"
 echo "The service principal can now create and manage agents."
 echo ""
