@@ -1,7 +1,7 @@
 #!/bin/bash
 # Grant permissions to GitHub Actions service principal for agent creation
 
-PRINCIPAL_ID="fdf2b8a9-67a0-48a7-8f2f-a6be7a79da5d"
+PRINCIPAL_ID="65eb0117-372c-4f2f-83b9-3e163eceb1a1"
 AI_PROJECT_NAME="${AI_PROJECT_NAME:-davidsr-ai-project-resource}"
 RESOURCE_GROUP="${AI_PROJECT_RESOURCE_GROUP:-davidsr-AI-RG}"
 SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID}"
