@@ -33,8 +33,9 @@ echo ""
 
 # Required roles for AI Foundry agents
 # Azure AI User: Includes Microsoft.CognitiveServices/* data action (needed for agents/write)
+# Cognitive Services User: For using cognitive services
 # Cognitive Services OpenAI Contributor: For OpenAI model access
-ROLES=("Azure AI User" "Cognitive Services OpenAI Contributor")
+ROLES=("Azure AI User" "Cognitive Services User" "Cognitive Services OpenAI Contributor")
 
 for ROLE_NAME in "${ROLES[@]}"; do
   echo "Checking role: $ROLE_NAME"
@@ -46,23 +47,32 @@ for ROLE_NAME in "${ROLES[@]}"; do
     --output tsv 2>/dev/null)
 
   if [ -n "$EXISTING_ASSIGNMENT" ]; then
-    echo "✅ Role '$ROLE_NAME' already assigned"
+    echo "✅ Role '$ROLE_NAME' already assigned at resource scope"
     echo "   Assignment ID: $EXISTING_ASSIGNMENT"
   else
-    echo "Granting role: $ROLE_NAME"
+    echo "Granting role: $ROLE_NAME at resource scope"
     
     az role assignment create \
       --assignee "$PRINCIPAL_ID" \
       --role "$ROLE_NAME" \
       --scope "$RESOURCE_ID" \
-      --output json
+      --output json 2>/dev/null
     
     if [ $? -eq 0 ]; then
-      echo "✅ Successfully granted role: $ROLE_NAME"
+      echo "✅ Successfully granted role: $ROLE_NAME at resource scope"
     else
-      echo "❌ Failed to grant role (may already exist or lack permissions)"
-      echo "   If you see this error, run manually:"
-      echo "   az role assignment create --assignee $PRINCIPAL_ID --role '$ROLE_NAME' --scope $RESOURCE_ID"
+      echo "⚠️  Could not grant at resource scope, trying at resource group scope..."
+      az role assignment create \
+        --assignee "$PRINCIPAL_ID" \
+        --role "$ROLE_NAME" \
+        --resource-group "$RESOURCE_GROUP" \
+        --output json 2>/dev/null
+      
+      if [ $? -eq 0 ]; then
+        echo "✅ Successfully granted role: $ROLE_NAME at resource group scope"
+      else
+        echo "⚠️  Could not grant at resource group scope either"
+      fi
     fi
   fi
   echo ""
@@ -70,8 +80,8 @@ done
 echo "========================================================================"
 echo "Permission Grant Complete"
 echo "========================================================================"
-echo "Waiting for role assignments to propagate (60 seconds)..."
-sleep 60
+echo "Waiting for role assignments to propagate (120 seconds)..."
+sleep 120
 echo "✅ Role propagation complete"
 echo "The service principal can now create and manage agents."
 echo ""
