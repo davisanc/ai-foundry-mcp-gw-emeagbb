@@ -10,6 +10,7 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const { createMCPServer } = require('./mcp-handler');
 const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js');
+const { DefaultAzureCredential } = require('@azure/identity');
 // ...existing code...
 
 const app = express();
@@ -488,23 +489,39 @@ app.post('/session/:sid/query', async (req, res) => {
 
   const endpoint = process.env.FOUNDRY_ENDPOINT;
   const apiKey = process.env.FOUNDRY_API_KEY;
+  const useApiKey = !!apiKey;
 
   // Log everything for debugging
   console.log("🔹 Sending request to Azure GPT-4o-mini...");
   console.log("Endpoint:", endpoint);
-  console.log("Headers:", { "api-key": apiKey ? apiKey.substring(0, 10) + "..." : '[NO KEY]' });
-  console.log("Request body:", JSON.stringify({
-    messages: [{ role: "user", content: prompt }],
-    max_tokens: 300
-  }, null, 2));
-
+  console.log("Auth method:", useApiKey ? "API Key" : "Managed Identity");
+  
   try {
+    let headers = {
+      'Content-Type': 'application/json'
+    };
+
+    // Use API key if available, otherwise use managed identity
+    if (useApiKey) {
+      headers['api-key'] = apiKey;
+      console.log("Headers:", { "api-key": apiKey ? apiKey.substring(0, 10) + "..." : '[NO KEY]' });
+    } else {
+      // Use managed identity to get token
+      console.log("🔐 Authenticating with managed identity...");
+      const credential = new DefaultAzureCredential();
+      const token = await credential.getToken('https://cognitiveservices.azure.com/.default');
+      headers['Authorization'] = `Bearer ${token.token}`;
+      console.log("Headers:", { "Authorization": `Bearer ${token.token.substring(0, 10)}...` });
+    }
+
+    console.log("Request body:", JSON.stringify({
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 300
+    }, null, 2));
+
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        'api-key': apiKey,
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify({
         messages: [{ role: "user", content: prompt }],
         max_tokens: 300
