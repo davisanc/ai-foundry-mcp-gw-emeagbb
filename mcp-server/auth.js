@@ -42,22 +42,13 @@ const tokenCache = new Map();
 
 /**
  * Get authentication headers for Azure Cognitive Services
+ * Uses Azure Managed Identity (required - API keys are disabled)
  * 
  * @returns {Promise<Object>} Object with headers to include in requests
  * @throws {Error} If authentication fails
  */
 async function getAuthHeaders() {
-  const apiKey = process.env.FOUNDRY_API_KEY;
-  
-  if (apiKey) {
-    // API Key authentication (backward compatible)
-    console.log('✅ Using API Key authentication');
-    return {
-      'api-key': apiKey
-    };
-  }
-
-  // Managed Identity authentication (preferred)
+  // Managed Identity authentication (required - API keys disabled on Foundry)
   console.log('🔐 Using Managed Identity authentication');
   
   try {
@@ -79,7 +70,7 @@ async function getAuthHeaders() {
     // Provide helpful error messages
     if (error.message.includes('ENOTFOUND')) {
       console.error('💡 Hint: Ensure the app is running in Azure (managed identity is only available in Azure)');
-      console.error('💡 For local testing, set FOUNDRY_API_KEY environment variable');
+      console.error('💡 For local testing, use: az login && az account set --subscription <id>');
     }
     
     throw new Error(`Authentication failed: ${error.message}`);
