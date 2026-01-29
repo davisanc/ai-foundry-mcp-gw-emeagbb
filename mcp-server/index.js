@@ -1,3 +1,50 @@
+/**
+ * ============================================================================
+ * MIGRATION: API KEY AUTHENTICATION → MANAGED IDENTITY
+ * ============================================================================
+ * 
+ * CHANGES FROM API KEY TO MANAGED IDENTITY:
+ * 
+ * 1. DEPENDENCIES (package.json):
+ *    - Added: @azure/identity ^4.0.0 for managed identity support
+ *    - Removed: FOUNDRY_API_KEY environment variable (no longer needed)
+ *
+ * 2. IMPORTS:
+ *    - Added: auth module exports (getAuthHeaders, makeAuthenticatedRequest)
+ *    - Removed: Direct import of DefaultAzureCredential (moved to auth.js)
+ *    - This enables automatic token acquisition using webapp's managed identity
+ *
+ * 3. QUERY ENDPOINT (/session/:sid/query):
+ *    - REMOVED: const apiKey = process.env.FOUNDRY_API_KEY;
+ *    - REMOVED: 'api-key': apiKey header
+ *    - ADDED: getAuthHeaders() to get OAuth token
+ *    - ADDED: 'Authorization': `Bearer ${token.token}` header
+ *    - Benefits: No API keys in environment, automatic token refresh, secure
+ *
+ * 4. GITHUB ACTIONS WORKFLOW (.github/workflows/deploy.yml):
+ *    - Added step: "Enable Managed Identity on Web App"
+ *      - Assigns system-managed identity to Azure App Service
+ *    - Added step: "Grant Web App Access to AI Foundry"
+ *      - Assigns required Azure roles to the managed identity:
+ *        * Azure AI User
+ *        * Cognitive Services User
+ *        * Cognitive Services OpenAI Contributor
+ *    - REMOVED: FOUNDRY_API_KEY from app settings
+ *
+ * HOW IT WORKS:
+ * - When code runs in Azure, DefaultAzureCredential automatically uses the
+ *   webapp's managed identity to acquire an OAuth token
+ * - Token is valid for 1 hour and automatically refreshed as needed
+ * - No secrets stored in environment variables or key vaults
+ * - Azure handles all credential management securely
+ *
+ * LOCAL TESTING:
+ * - Set AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID for local dev
+ * - Or use: az login && az account set --subscription <id>
+ *
+ * ============================================================================
+ */
+
 // added debugging options
 
 //test to trigger pipeline
@@ -10,7 +57,7 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const { createMCPServer } = require('./mcp-handler');
 const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js');
-const { DefaultAzureCredential } = require('@azure/identity');
+const { getAuthHeaders, makeAuthenticatedRequest } = require('./auth');
 // ...existing code...
 
 const app = express();
@@ -488,31 +535,17 @@ app.post('/session/:sid/query', async (req, res) => {
     : `Summarize the following document:\n\n${doc.text}\n\nSummary:`;
 
   const endpoint = process.env.FOUNDRY_ENDPOINT;
-  const apiKey = process.env.FOUNDRY_API_KEY;
-  const useApiKey = !!apiKey;
 
-  // Log everything for debugging
   console.log("🔹 Sending request to Azure GPT-4o-mini...");
   console.log("Endpoint:", endpoint);
-  console.log("Auth method:", useApiKey ? "API Key" : "Managed Identity");
   
   try {
-    let headers = {
-      'Content-Type': 'application/json'
+    const authHeaders = await getAuthHeaders();
+    
+    const headers = {
+      'Content-Type': 'application/json',
+      ...authHeaders
     };
-
-    // Use API key if available, otherwise use managed identity
-    if (useApiKey) {
-      headers['api-key'] = apiKey;
-      console.log("Headers:", { "api-key": apiKey ? apiKey.substring(0, 10) + "..." : '[NO KEY]' });
-    } else {
-      // Use managed identity to get token
-      console.log("🔐 Authenticating with managed identity...");
-      const credential = new DefaultAzureCredential();
-      const token = await credential.getToken('https://cognitiveservices.azure.com/.default');
-      headers['Authorization'] = `Bearer ${token.token}`;
-      console.log("Headers:", { "Authorization": `Bearer ${token.token.substring(0, 10)}...` });
-    }
 
     console.log("Request body:", JSON.stringify({
       messages: [{ role: "user", content: prompt }],

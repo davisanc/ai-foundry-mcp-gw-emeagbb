@@ -1,6 +1,9 @@
 # Azure AI Foundry + MCP + APIM Demo
 
-✅ **MCP Server Status: WORKING**
+✅ **MCP Server Status: WORKING**  
+🔐 **Authentication: Managed Identity (Required)**
+
+> ⚠️ **IMPORTANT**: API key authentication has been disabled on Azure AI Foundry. This application now uses **Azure Managed Identity** for all authentication. See [MANAGED_IDENTITY_MIGRATION.md](./MANAGED_IDENTITY_MIGRATION.md) for setup instructions.
 
 This repo demonstrates a complete **end-to-end automated deployment** of an AI Agent with Model Context Protocol (MCP) capabilities, deployed via GitHub Actions.
 
@@ -132,13 +135,15 @@ az role assignment create \
 
    Go to **Settings** → **Secrets and variables** → **Actions** and add:
 
-   | Secret Name | Description | Example | Required |
-   |-------------|-------------|---------|----------|
-   | `AZURE_CREDENTIALS` | Service principal JSON from step 1 | `{"clientId":"...","clientSecret":"..."}` | ✅ Yes |
-   | `AI_PROJECT_RESOURCE_GROUP` | Resource group of your AI project | `AI-RG` | ✅ Yes |
-   | `AI_PROJECT_NAME` | AI Foundry project resource name | `my-project-resourcev2` | ✅ Yes |
-   | `FOUNDRY_ENDPOINT` | Azure AI Foundry model endpoint | `https://...openai.azure.com/` | ✅ Yes |
-   | `FOUNDRY_API_KEY` | Azure AI Foundry API key | `sk-...` | ✅ Yes |
+   | Secret Name | Description | Example | Required | Notes |
+   |-------------|-------------|---------|----------|-------|
+   | `AZURE_CREDENTIALS` | Service principal JSON from step 1 | `{"clientId":"...","clientSecret":"..."}` | ✅ Yes | For GitHub Actions deployment |
+   | `AI_PROJECT_RESOURCE_GROUP` | Resource group of your AI project | `AI-RG` | ✅ Yes | |
+   | `AI_PROJECT_NAME` | AI Foundry project resource name | `my-project-resourcev2` | ✅ Yes | Resource name, not display name |
+   | `FOUNDRY_ENDPOINT` | Azure AI Foundry model endpoint | `https://...openai.azure.com/` | ✅ Yes | |
+   | `FOUNDRY_API_KEY` | Azure AI Foundry API key | `sk-...` | ❌ No | **Optional** - Managed Identity is used if not set |
+
+   > **Note**: The web app uses **Managed Identity** for authentication to AI Foundry. The `FOUNDRY_API_KEY` is optional and only kept for backward compatibility. For production, it's recommended to remove this secret entirely.
 
    **Note**: The AI_PROJECT_NAME is usually the **resource name** (often ends with `-resourcev2`), not the project display name.
 
