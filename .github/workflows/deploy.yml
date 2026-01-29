@@ -9,7 +9,7 @@ env:
   AZURE_RESOURCE_GROUP: ai-mcp-rg
   AI_PROJECT_RESOURCE_GROUP: ${{ secrets.AI_PROJECT_RESOURCE_GROUP || 'davidsr-AI-RG' }}
   LOCATION: westeurope
-  APP_SERVICE_PLAN: mcp-asp-davisanc
+  APP_SERVICE_PLAN: mcp-asp
   WEBAPP_NAME: mcp-server-app-davisanc
   APIM_NAME: mcp-apim-davisanc
   APIM_PUBLISHER_EMAIL: test@example.com
