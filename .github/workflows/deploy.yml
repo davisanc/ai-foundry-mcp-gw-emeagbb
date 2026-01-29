@@ -55,14 +55,20 @@ jobs:
     
 
     # -------------------------------
-    # Create App Service Plan
+    # Create App Service Plan (if not exists)
     # -------------------------------
     - name: Create App Service Plan
       run: |
-        az appservice plan create \
-          -g $AZURE_RESOURCE_GROUP \
-          -n $APP_SERVICE_PLAN \
-          --sku B1 --is-linux
+        PLAN_EXISTS=$(az appservice plan show -g $AZURE_RESOURCE_GROUP -n $APP_SERVICE_PLAN 2>/dev/null || echo "")
+        if [ -z "$PLAN_EXISTS" ]; then
+          echo "Creating App Service Plan..."
+          az appservice plan create \
+            -g $AZURE_RESOURCE_GROUP \
+            -n $APP_SERVICE_PLAN \
+            --sku B1 --is-linux
+        else
+          echo "App Service Plan already exists, skipping creation"
+        fi
 
     # -------------------------------
     # Deploy MCP server
